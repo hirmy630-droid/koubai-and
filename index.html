@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>勾配 寸法計算</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* iOS Dark Mode Theme */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-size: 0.9375rem; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: pan-y; /* 垂直スクロールを許可し、水平方向はJSで制御しやすくする */
+            overflow-x: hidden;
+        }
+        
+        /* 一体型コンテナ */
+        .unified-input-unit {
+            background: #1c1c1e;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        /* 入力セルセクション */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: #000;
+        }
+        .input-cell {
+            border-bottom: 1px solid #333;
+            border-right: 1px solid #333;
+            padding: 4px 10px;
+            height: 58px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            background: #000;
+        }
+        .input-cell:nth-child(2n) {
+            border-right: none;
+        }
+        .input-cell.active {
+            outline: 2px solid #ff9f0a;
+            outline-offset: -2px;
+            z-index: 20;
+            background: #1c1c1e;
+        }
+        .cell-label {
+            font-size: 13px !important;
+            color: #8e8e93;
+            font-weight: 600;
+            margin-bottom: 0px;
+        }
+        .cell-value {
+            font-size: 1.6rem; 
+            font-weight: 700;
+            text-align: right;
+            padding-right: 4px;
+            line-height: 1.1;
+        }
+
+        /* テンキーセクション */
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: #333;
+            gap: 1px;
+        }
+        .key-btn {
+            background: #1c1c1e;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 500;
+            transition: background 0.1s;
+        }
+        .key-btn:active { background: #3a3a3c; }
+        .key-btn.gray { background: #2c2c2e; color: #d1d1d6; }
+        
+        .key-btn.orange { 
+            background: #ff9f0a; 
+            color: #fff; 
+            grid-row: span 2; 
+            height: 137px; 
+            font-weight: 800;
+        }
+        .key-btn.orange:active { background: #e68e09; }
+        
+        .key-btn.triple-zero {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        /* タブ */
+        .tab-container {
+            background: #161618;
+            padding: 2px;
+            border-radius: 10px;
+            display: flex;
+            margin-bottom: 10px;
+            border: 1px solid #38383a;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 6px 0;
+            text-align: center;
+            font-weight: 600;
+            border-radius: 7px;
+            color: #d1d1d6;
+            font-size: 0.85rem;
+        }
+        .tab-button.active {
+            background: #48484a;
+            color: white;
+            border: 1px solid #ff9f0a;
+        }
+
+        .result-label {
+            font-size: 13px !important;
+            font-weight: 700;
+        }
+
+        .result-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .canvas-container {
+            background-color: #000;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            position: relative;
+        }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        
+        .result-table th {
+            border: 0.5px solid #333; 
+            text-align: center; 
+            padding: 10px 2px !important;
+            font-size: 14px;
+        }
+        
+        .result-table td {
+            border: 0.5px solid #333; 
+            text-align: center; 
+            padding: 12px 2px !important;
+            font-size: 1.1rem;
+        }
+    </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="勾配 寸法計算">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-startup-image" href="splash-1170x2532.png">
+<meta name="format-detection" content="telephone=no">
+<style>
+#installBtn{
+  position:fixed;
+  right:16px;
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:9999;
+  border:none;
+  border-radius:14px;
+  background:#2563eb;
+  color:#fff;
+  padding:12px 16px;
+  font-size:14px;
+  font-weight:700;
+  box-shadow:0 10px 24px rgba(0,0,0,.35);
+  display:none;
+}
+#installBtn:active{transform:scale(.98)}
+body{
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+</style>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+
+</head>
+<body class="p-3 relative">
+    <div id="app-container" class="max-w-md mx-auto min-h-screen pb-4">
+        <header class="flex items-baseline justify-between py-1 px-1 mb-1">
+            <h1 class="text-[20px] font-bold text-white tracking-tight">勾配 寸法計算</h1>
+            <p class="text-[12px] font-medium text-gray-500 uppercase tracking-widest">KYOWA ROOF</p>
+        </header>
+
+        <div class="tab-container">
+            <button id="tab-calc" class="tab-button active" onclick="switchTab('calc')">計算</button>
+            <button id="tab-table" class="tab-button" onclick="switchTab('table')">寸法表</button>
+        </div>
+
+        <!-- 計算画面 -->
+        <div id="view-calc" class="view-section active">
+            <div class="unified-input-unit mb-3">
+                <div class="input-grid">
+                    <div id="cell-L1" class="input-cell active" onclick="setActiveCell('L1')">
+                        <span class="cell-label text-[#30d158]">基準側 L1</span>
+                        <span id="val-L1" class="cell-value text-[#30d158]">0</span>
+                    </div>
+                    <div id="cell-L2" class="input-cell" onclick="setActiveCell('L2')">
+                        <span class="cell-label text-[#30d158]">延長側 L2</span>
+                        <span id="val-L2" class="cell-value text-[#30d158]">0</span>
+                    </div>
+                    <div id="cell-W" class="input-cell" onclick="setActiveCell('W')">
+                        <span class="cell-label text-[#0a84ff]">全体の幅 W</span>
+                        <span id="val-W" class="cell-value text-[#0a84ff]">0</span>
+                    </div>
+                    <div id="cell-Pitch" class="input-cell" onclick="setActiveCell('Pitch')">
+                        <span class="cell-label text-[#bf5af2]">働き幅 ＠</span>
+                        <span id="val-Pitch" class="cell-value text-[#bf5af2]">0</span>
+                    </div>
+                </div>
+
+                <div class="keypad-grid">
+                    <div class="key-btn" onclick="pressKey('7')">7</div>
+                    <div class="key-btn" onclick="pressKey('8')">8</div>
+                    <div class="key-btn" onclick="pressKey('9')">9</div>
+                    <div class="key-btn gray" onclick="pressKey('C')">C</div>
+                    
+                    <div class="key-btn" onclick="pressKey('4')">4</div>
+                    <div class="key-btn" onclick="pressKey('5')">5</div>
+                    <div class="key-btn" onclick="pressKey('6')">6</div>
+                    <div class="key-btn gray" onclick="pressKey('AC')">AC</div>
+                    
+                    <div class="key-btn" onclick="pressKey('1')">1</div>
+                    <div class="key-btn" onclick="pressKey('2')">2</div>
+                    <div class="key-btn" onclick="pressKey('3')">3</div>
+                    <div class="key-btn orange" onclick="pressKey('enter')">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
+                    </div>
+                    
+                    <div class="key-btn" onclick="pressKey('0')">0</div>
+                    <div class="key-btn" onclick="pressKey('00')">00</div>
+                    <div class="key-btn triple-zero" onclick="pressKey('000')">000</div>
+                </div>
+            </div>
+
+            <div class="bg-[#1c1c1e] rounded-[14px] p-3 border border-[#333]">
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="bg-black border border-[#333] p-1.5 rounded-lg text-center">
+                        <span class="block result-label text-[#0a84ff]">延長後の幅</span>
+                        <span id="resNewB" class="result-value text-white">-</span>
+                    </div>
+                    <div class="bg-black border border-[#333] p-1.5 rounded-lg text-center">
+                        <span class="block result-label text-[#30d158]">延長後のL2</span>
+                        <span id="resNewC" class="result-value text-white">-</span>
+                    </div>
+                    <div class="bg-black border border-[#333] p-1.5 rounded-lg text-center">
+                        <span class="block result-label text-[#ff9f0a]">総枚数</span>
+                        <span id="resIntervalCount" class="result-value text-white">-</span>
+                    </div>
+                    <div class="bg-black border border-[#333] p-1.5 rounded-lg text-center">
+                        <span class="block result-label text-[#bf5af2]">増分</span>
+                        <span id="resStep" class="result-value text-white">-</span>
+                    </div>
+                </div>
+                
+                <div class="canvas-container border border-[#333] rounded-lg cursor-pointer" onclick="openZoomModal()">
+                    <!-- 拡大バッジ (非表示) -->
+                    <div class="hidden absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 backdrop-blur-sm border border-white/20 z-10 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                        拡大
+                    </div>
+                    <canvas id="slopeCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 寸法表画面 -->
+        <div id="view-table" class="view-section">
+            <div class="bg-[#1c1c1e] rounded-[14px] p-3 border border-[#333]">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-gray-200">寸法詳細</h2>
+                    <span id="table-summary" class="text-lg text-[#ff9f0a] font-bold"></span>
+                </div>
+                <table class="result-table w-full border-collapse bg-black text-sm">
+                    <thead>
+                        <tr>
+                            <th class="w-[20%] text-[#ff9f0a] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">No.</th>
+                            <th class="w-[40%] text-[#0a84ff] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">働き幅</th>
+                            <th class="w-[40%] text-[#30d158] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">長さ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拡大・ピンチ・回転対応ズームモーダル -->
+    <div id="zoomModal" class="hidden fixed inset-0 z-[10000] flex flex-col bg-black transition-opacity">
+        <!-- ヘッダー部分 (操作ガイドを削除) -->
+        <div class="absolute top-0 left-0 right-0 p-4 md:p-6 flex justify-end items-center z-[10010]">
+            <div class="flex gap-3">
+                <!-- 回転ボタン -->
+                <button type="button" class="text-white bg-white/20 hover:bg-white/30 rounded-full p-2.5 backdrop-blur-md transition-colors" onclick="toggleZoomRotation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
+                <!-- 閉じるボタン -->
+                <button type="button" class="text-white bg-white/20 hover:bg-white/30 rounded-full p-2.5 backdrop-blur-md transition-colors" onclick="closeZoomModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+        </div>
+        <!-- 拡大画像コンテナ (touch-noneでスクロールを防止) -->
+        <div id="zoomArea" class="flex-1 w-full h-full flex items-center justify-center overflow-hidden touch-none relative">
+            <img id="zoomImg" class="max-w-full max-h-full object-contain transition-transform duration-75 ease-out" alt="拡大図面" style="transform-origin: center;">
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'calc';
+        let activeKey = 'L1';
+        let values = { L1: '0', L2: '0', W: '0', Pitch: '0' };
+        let isFirstInput = true;
+        const sequence = ['L1', 'L2', 'W', 'Pitch'];
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // ---------- 入力・計算系 ----------
+        function setActiveCell(key) {
+            activeKey = key;
+            isFirstInput = true; 
+            sequence.forEach(k => {
+                const cell = document.getElementById(`cell-${k}`);
+                if(cell) cell.classList.remove('active');
+            });
+            const activeCell = document.getElementById(`cell-${key}`);
+            if(activeCell) activeCell.classList.add('active');
+        }
+
+        function pressKey(key) {
+            let cur = values[activeKey];
+            if (key === 'AC') {
+                values = { L1: '0', L2: '0', W: '0', Pitch: '0' };
+                isFirstInput = true;
+            } else if (key === 'C') {
+                values[activeKey] = '0';
+                isFirstInput = true;
+            } else if (key === 'enter') {
+                const idx = sequence.indexOf(activeKey);
+                const nextIdx = (idx + 1) % sequence.length;
+                setActiveCell(sequence[nextIdx]);
+                return;
+            } else {
+                if (isFirstInput) {
+                    if (key === '00' || key === '000') values[activeKey] = '0';
+                    else values[activeKey] = key;
+                    isFirstInput = false;
+                } else {
+                    if (cur === '0') {
+                        if (key !== '00' && key !== '000') values[activeKey] = key;
+                    } else {
+                        values[activeKey] += key;
+                    }
+                }
+            }
+            updateDisplay();
+            calculate();
+            saveState();
+        }
+
+        function updateDisplay() {
+            sequence.forEach(k => {
+                const val = values[k];
+                const num = parseFloat(val);
+                const display = document.getElementById(`val-${k}`);
+                if(display) display.innerText = isNaN(num) ? val : num.toLocaleString('en-US', {maximumFractionDigits: 4});
+            });
+        }
+
+        function switchTab(tabName) {
+            if (currentTab === tabName) return;
+            currentTab = tabName;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            const targetView = document.getElementById(`view-${tabName}`);
+            const targetBtn = document.getElementById(`tab-${tabName}`);
+            if(targetView) targetView.classList.add('active');
+            if(targetBtn) targetBtn.classList.add('active');
+            if (tabName === 'calc') calculate();
+            window.scrollTo(0, 0);
+        }
+
+        function calculate() {
+            const a = parseFloat(values.L1) || 0;
+            const b = parseFloat(values.W) || 0;
+            const c = parseFloat(values.L2) || 0;
+            const interval = parseFloat(values.Pitch) || 0;
+
+            if (b <= 0 || interval <= 0) {
+                ['resNewB', 'resNewC', 'resIntervalCount', 'resStep'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.innerText = '-';
+                });
+                const tbody = document.getElementById('resultBody');
+                if(tbody) tbody.innerHTML = '';
+                return;
+            };
+
+            const count = Math.ceil(b / interval);
+            const newB = count * interval;
+            const slope = (c - a) / b;
+            const newC = a + (slope * newB);
+            const step = slope * interval;
+
+            const resNewB = document.getElementById('resNewB');
+            const resNewC = document.getElementById('resNewC');
+            const resIntervalCount = document.getElementById('resIntervalCount');
+            const resStep = document.getElementById('resStep');
+            const tableSummary = document.getElementById('table-summary');
+
+            if(resNewB) resNewB.innerText = Math.round(newB).toLocaleString();
+            if(resNewC) resNewC.innerText = Math.round(newC).toLocaleString();
+            if(resIntervalCount) resIntervalCount.innerText = count;
+            if(resStep) resStep.innerText = Math.round(Math.abs(step)).toLocaleString();
+            if(tableSummary) tableSummary.innerText = `${count}枚`;
+
+            const tbody = document.getElementById('resultBody');
+            if(tbody) {
+                tbody.innerHTML = '';
+                for (let i = 0; i <= count; i++) {
+                    const dist = i * interval;
+                    const height = a + (slope * dist);
+                    const tr = document.createElement('tr');
+                    
+                    const distColor = i === 0 ? "text-[#8e8e93]" : "text-[#0a84ff]";
+                    const heightColor = i === 0 ? "text-[#8e8e93]" : "text-[#30d158]";
+                    
+                    tr.innerHTML = `
+                        <td class="text-[#ff9f0a] font-bold border border-[#333] py-2">${i}</td>
+                        <td class="${distColor} border border-[#333] py-2">${dist.toLocaleString()}</td>
+                        <td class="${heightColor} font-black text-xl border border-[#333] py-2">${Math.round(height).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+
+                const scrapW = newB - b;
+                const scrapL = newC - c;
+                
+                const trScrap = document.createElement('tr');
+                trScrap.className = "bg-[#2c2c2e]";
+                trScrap.innerHTML = `
+                    <td class="text-[#d1d1d6] font-bold border border-[#333] py-2 text-[14px]" style="border-top: 1px solid #d1d1d6;">端材</td>
+                    <td class="text-[#0a84ff] border border-[#333] py-2" style="border-top: 1px solid #d1d1d6;">
+                        <div class="flex flex-col items-center justify-center gap-1">
+                            <span class="text-[14px] text-[#d1d1d6] font-normal leading-none">働き 端材</span>
+                            <span class="leading-none mt-0.5">${Math.round(scrapW).toLocaleString()}</span>
+                        </div>
+                    </td>
+                    <td class="text-[#30d158] font-black text-xl border border-[#333] py-2" style="border-top: 1px solid #d1d1d6;">
+                        <div class="flex flex-col items-center justify-center gap-1">
+                            <span class="text-[14px] text-[#d1d1d6] font-normal leading-none">長さ 端材</span>
+                            <span class="leading-none mt-0.5">${Math.round(scrapL).toLocaleString()}</span>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(trScrap);
+            }
+            drawSlope(a, b, c, newB, newC, count, interval);
+        }
+
+        function drawSlope(a, origB, origC, newB, newC, count, interval) {
+            const canvas = document.getElementById('slopeCanvas');
+            if(!canvas) return;
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            
+            const padding = { l: 30, r: 30, t: 35, b: 35 };
+            const drawW = rect.width - (padding.l + padding.r);
+            const drawH = rect.height - (padding.t + padding.b);
+            const scaleX = drawW / (newB || 1);
+            const maxHeight = Math.max(a, newC, origC);
+            const scaleY = drawH / (maxHeight || 1);
+
+            const tx = (x) => padding.l + x * scaleX;
+            const ty = (y) => rect.height - padding.b - y * scaleY;
+
+            ctx.beginPath(); ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+            for(let j=0; j<=maxHeight; j+=maxHeight/4) {
+                if(j === 0) continue;
+                ctx.moveTo(tx(0), ty(j)); ctx.lineTo(tx(newB), ty(j));
+            }
+            ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = '#0a84ff'; ctx.lineWidth = 2;
+            ctx.moveTo(tx(0), ty(0)); ctx.lineTo(tx(newB), ty(0)); ctx.stroke();
+
+            for (let i = 1; i < count; i++) {
+                const cx = i * interval;
+                const cy = a + ((newC - a) / newB) * cx;
+                ctx.beginPath();
+                ctx.strokeStyle = '#bf5af2';
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.5;
+                ctx.moveTo(tx(cx), ty(0)); ctx.lineTo(tx(cx), ty(cy)); ctx.stroke();
+                ctx.globalAlpha = 1.0;
+            }
+
+            if (origB > 0 && origB !== newB) {
+                ctx.setLineDash([4, 2]); ctx.strokeStyle = '#ff453a'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(tx(origB), ty(0)); ctx.lineTo(tx(origB), ty(origC)); ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.font = "bold 11px sans-serif"; 
+                ctx.fillStyle = "#ff453a";
+                ctx.textAlign = "center";
+                ctx.fillText(Math.round(origC), tx(origB), ty(0) + 16);
+            }
+
+            ctx.beginPath(); ctx.strokeStyle = '#30d158'; ctx.lineWidth = 2;
+            ctx.moveTo(tx(0), ty(0)); ctx.lineTo(tx(0), ty(a)); ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = '#30d158'; ctx.lineWidth = 2;
+            ctx.moveTo(tx(newB), ty(0)); ctx.lineTo(tx(newB), ty(newC)); ctx.stroke();
+
+            ctx.beginPath(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+            ctx.moveTo(tx(0), ty(a)); ctx.lineTo(tx(newB), ty(newC)); ctx.stroke();
+            
+            ctx.font = "bold 11px sans-serif"; 
+            ctx.fillStyle = "#30d158"; 
+            ctx.textAlign = "center";
+            ctx.fillText(Math.round(a), tx(0), ty(a) - 8);
+            ctx.fillText(Math.round(newC), tx(newB), ty(newC) - 8);
+
+            ctx.fillStyle = "#0a84ff";
+            ctx.fillText(`W: ${Math.round(origB)}`, tx(origB / 2), ty(0) + 16);
+
+            if (origB !== newB && newB > 0) {
+                ctx.fillStyle = "#8e8e93";
+                ctx.font = "bold 10px sans-serif"; 
+                ctx.fillText(`全体幅: ${Math.round(newB)}`, tx(newB / 2), ty(0) + 28);
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('slope_calc_v_keypad', JSON.stringify(values));
+        }
+
+        // ---------- ズーム・回転・ピンチ機能 ----------
+        let zoomState = { scale: 1, x: 0, y: 0, rotation: 0 };
+        let pinchState = { isDragging: false, startX: 0, startY: 0, initialDist: 0, initialScale: 1 };
+
+        function openZoomModal() {
+            const canvas = document.getElementById('slopeCanvas');
+            if (!canvas || canvas.width === 0) return;
+
+            const zoomImg = document.getElementById('zoomImg');
+            zoomImg.src = canvas.toDataURL('image/png');
+            
+            // 状態を初期化
+            zoomState = { scale: 1, x: 0, y: 0, rotation: 0 };
+            updateZoomTransform();
+
+            const modal = document.getElementById('zoomModal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeZoomModal() {
+            const modal = document.getElementById('zoomModal');
+            modal.classList.add('hidden');
+            const zoomImg = document.getElementById('zoomImg');
+            zoomImg.src = '';
+        }
+
+        function toggleZoomRotation() {
+            const zoomImg = document.getElementById('zoomImg');
+            zoomState.rotation = (zoomState.rotation === 0) ? 90 : 0;
+            
+            // 位置のリセット
+            zoomState.x = 0;
+            zoomState.y = 0;
+            
+            // 回転時に画面いっぱいに表示されるようスケールを自動計算
+            if (zoomState.rotation === 90) {
+                const vW = window.innerWidth;
+                const vH = window.innerHeight;
+                // imgタグの表示領域を取得
+                const rect = zoomImg.getBoundingClientRect();
+                // 90度回転時は、元の幅が高さになり、元の高さが幅になる
+                // 安全のため画面の95%程度に収まるスケールを算出
+                const scaleW = (vW * 0.95) / rect.height;
+                const scaleH = (vH * 0.95) / rect.width;
+                zoomState.scale = Math.min(scaleW, scaleH);
+            } else {
+                zoomState.scale = 1;
+            }
+            
+            zoomImg.style.transition = 'transform 0.3s ease-in-out';
+            updateZoomTransform();
+            setTimeout(() => { zoomImg.style.transition = 'none'; }, 300);
+        }
+
+        function updateZoomTransform() {
+            const zoomImg = document.getElementById('zoomImg');
+            zoomImg.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale}) rotate(${zoomState.rotation}deg)`;
+        }
+
+        // DOMContentLoaded後にズームエリアのタッチイベントを登録
+        window.addEventListener('DOMContentLoaded', () => {
+            const zoomArea = document.getElementById('zoomArea');
+            if (!zoomArea) return;
+
+            zoomArea.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    pinchState.isDragging = true;
+                    pinchState.startX = e.touches[0].clientX - zoomState.x;
+                    pinchState.startY = e.touches[0].clientY - zoomState.y;
+                } else if (e.touches.length === 2) {
+                    pinchState.isDragging = false;
+                    pinchState.initialDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    pinchState.initialScale = zoomState.scale;
+                }
+            }, { passive: false });
+
+            zoomArea.addEventListener('touchmove', (e) => {
+                e.preventDefault(); // デフォルトのスクロール動作を防止
+                if (e.touches.length === 1 && pinchState.isDragging) {
+                    zoomState.x = e.touches[0].clientX - pinchState.startX;
+                    zoomState.y = e.touches[0].clientY - pinchState.startY;
+                    updateZoomTransform();
+                } else if (e.touches.length === 2) {
+                    const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    const scale = pinchState.initialScale * (dist / pinchState.initialDist);
+                    // 0.3倍から10倍の間に制限
+                    zoomState.scale = Math.max(0.3, Math.min(scale, 10));
+                    updateZoomTransform();
+                }
+            }, { passive: false });
+
+            zoomArea.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    pinchState.initialDist = 0;
+                }
+                if (e.touches.length === 0) {
+                    pinchState.isDragging = false;
+                } else if (e.touches.length === 1) {
+                    // 指が1本離れたら再びドラッグ状態の準備
+                    pinchState.isDragging = true;
+                    pinchState.startX = e.touches[0].clientX - zoomState.x;
+                    pinchState.startY = e.touches[0].clientY - zoomState.y;
+                }
+            });
+        });
+
+        // スワイプジェスチャーの実装（タブ切り替え）
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+
+        function handleTouchEnd(e) {
+            // モーダルが開いている時はタブ切り替えを無効化
+            if (!document.getElementById('zoomModal').classList.contains('hidden')) return;
+
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+
+            if (Math.abs(diffY) < 60 && Math.abs(diffX) > 80) {
+                if (diffX > 0) switchTab('table');
+                else switchTab('calc');
+            }
+        }
+
+        window.onload = () => {
+            const saved = JSON.parse(localStorage.getItem('slope_calc_v_keypad'));
+            if(saved) {
+                values = saved;
+                updateDisplay();
+                calculate();
+            }
+
+            window.addEventListener('touchstart', handleTouchStart, {passive: true});
+            window.addEventListener('touchend', handleTouchEnd, {passive: true});
+            
+            window.addEventListener('resize', calculate);
+        };
+    </script>
+
+<button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
+<script>
+(function() {
+  let deferredPrompt = null;
+  const btn = document.getElementById('installBtn');
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone) btn.style.display = 'block';
+  });
+
+  btn.addEventListener('click', async function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (e) {}
+    deferredPrompt = null;
+    btn.style.display = 'none';
+  });
+
+  window.addEventListener('appinstalled', function() {
+    btn.style.display = 'none';
+  });
+})();
+</script>
+
+</body>
+</html>
