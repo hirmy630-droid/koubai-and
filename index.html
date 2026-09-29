@@ -13,8 +13,10 @@
             font-size: 0.9375rem; 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
-            touch-action: pan-y; /* 垂直スクロールを許可し、水平方向はJSで制御しやすくする */
+            touch-action: pan-y;
             overflow-x: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
         
         /* 一体型コンテナ */
@@ -35,12 +37,13 @@
             border-bottom: 1px solid #333;
             border-right: 1px solid #333;
             padding: 4px 10px;
-            height: 58px;
+            height: 56px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             position: relative;
             background: #000;
+            cursor: pointer;
         }
         .input-cell:nth-child(2n) {
             border-right: none;
@@ -53,50 +56,92 @@
         }
         .cell-label {
             font-size: 13px !important;
-            color: #8e8e93;
             font-weight: 600;
             margin-bottom: 0px;
         }
         .cell-value {
-            font-size: 1.6rem; 
+            font-size: 1.55rem; 
             font-weight: 700;
             text-align: right;
             padding-right: 4px;
             line-height: 1.1;
         }
 
-        /* テンキーセクション */
-        .keypad-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            background: #333;
-            gap: 1px;
+        /* 2行構成のテンキーエリア（隙間ゼロの一体型） */
+        .keypad-container {
+            padding: 0;
+            background: #151517;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-top: 1px solid #333;
         }
+
+        .keypad-row-1 {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .keypad-row-2 {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 0;
+        }
+
+        /* 立体的なキーボタン（隙間なし密着型・インセット立体感） */
         .key-btn {
-            background: #1c1c1e;
-            height: 68px;
+            background: #242426;
+            color: #ffffff;
+            height: 50px;
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
-            font-weight: 500;
-            transition: background 0.1s;
+            font-size: 1.25rem;
+            font-weight: 600;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            cursor: pointer;
+            position: relative;
+            border-right: 1px solid #333;
+            /* 上部のハイライトと下部のシャドウで立体感を演出 */
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+            transition: background-color 0.06s ease;
         }
-        .key-btn:active { background: #3a3a3c; }
-        .key-btn.gray { background: #2c2c2e; color: #d1d1d6; }
-        
-        .key-btn.orange { 
-            background: #ff9f0a; 
-            color: #fff; 
-            grid-row: span 2; 
-            height: 137px; 
-            font-weight: 800;
+
+        .keypad-row-1 .key-btn:last-child,
+        .keypad-row-2 .key-btn:last-child {
+            border-right: none;
         }
-        .key-btn.orange:active { background: #e68e09; }
-        
-        .key-btn.triple-zero {
-            font-size: 1.3rem;
-            font-weight: 700;
+
+        /* 押下時の立体的な沈み込み */
+        .key-btn:active {
+            background: #18181a;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        /* 1行目グレーキー (AC, C, ⏎) */
+        .key-btn.gray-control {
+            background: #353538;
+            color: #e5e5ea;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+        }
+        .key-btn.gray-control:active {
+            background: #28282b;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        /* エンターキーのマーク専用スタイル */
+        .key-btn.enter-key {
+            color: #ff9f0a !important;
+        }
+
+        /* 2行目数字キーの微調整 (9分割で収まるように文字サイズ最適化) */
+        .keypad-row-2 .key-btn {
+            font-size: 1.2rem;
+            padding: 0;
         }
 
         /* タブ */
@@ -129,7 +174,7 @@
         }
 
         .result-value {
-            font-size: 1.6rem;
+            font-size: 1.55rem;
             font-weight: 800;
             line-height: 1.1;
         }
@@ -158,47 +203,63 @@
             padding: 12px 2px !important;
             font-size: 1.1rem;
         }
+
+        #installBtn{
+            position:fixed;
+            right:16px;
+            bottom:calc(16px + env(safe-area-inset-bottom));
+            z-index:9999;
+            border:none;
+            border-radius:14px;
+            background:#2563eb;
+            color:#fff;
+            padding:12px 16px;
+            font-size:14px;
+            font-weight:700;
+            box-shadow:0 10px 24px rgba(0,0,0,.35);
+            display:none;
+        }
+        #installBtn:active{transform:scale(.98)}
     </style>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="勾配 寸法計算">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<link rel="apple-touch-startup-image" href="splash-1170x2532.png">
-<meta name="format-detection" content="telephone=no">
-<style>
-#installBtn{
-  position:fixed;
-  right:16px;
-  bottom:calc(16px + env(safe-area-inset-bottom));
-  z-index:9999;
-  border:none;
-  border-radius:14px;
-  background:#2563eb;
-  color:#fff;
-  padding:12px 16px;
-  font-size:14px;
-  font-weight:700;
-  box-shadow:0 10px 24px rgba(0,0,0,.35);
-  display:none;
-}
-#installBtn:active{transform:scale(.98)}
-body{
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-</style>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
-}
-</script>
+    
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="勾配 寸法計算">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-startup-image" href="splash-1170x2532.png">
+    <meta name="format-detection" content="telephone=no">
+    
+<link rel="manifest" href="./manifest.json?v=20260929182822">
+    <script>
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=20260929182822').then(reg => {
+          reg.onupdatefound = () => {
+            const installingWorker = reg.installing;
+            if (!installingWorker) return;
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                installingWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            };
+          };
+        }).catch(() => {});
 
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            window.location.reload();
+            refreshing = true;
+          }
+        });
+      });
+    }
+    </script>
 </head>
 <body class="p-3 relative">
     <div id="app-container" class="max-w-md mx-auto min-h-screen pb-4">
@@ -217,11 +278,11 @@ if ('serviceWorker' in navigator) {
             <div class="unified-input-unit mb-3">
                 <div class="input-grid">
                     <div id="cell-L1" class="input-cell active" onclick="setActiveCell('L1')">
-                        <span class="cell-label text-[#30d158]">基準側 L1</span>
+                        <span class="cell-label text-[#30d158]">最短 L1</span>
                         <span id="val-L1" class="cell-value text-[#30d158]">0</span>
                     </div>
                     <div id="cell-L2" class="input-cell" onclick="setActiveCell('L2')">
-                        <span class="cell-label text-[#30d158]">延長側 L2</span>
+                        <span class="cell-label text-[#30d158]">最長 L2</span>
                         <span id="val-L2" class="cell-value text-[#30d158]">0</span>
                     </div>
                     <div id="cell-W" class="input-cell" onclick="setActiveCell('W')">
@@ -234,27 +295,29 @@ if ('serviceWorker' in navigator) {
                     </div>
                 </div>
 
-                <div class="keypad-grid">
-                    <div class="key-btn" onclick="pressKey('7')">7</div>
-                    <div class="key-btn" onclick="pressKey('8')">8</div>
-                    <div class="key-btn" onclick="pressKey('9')">9</div>
-                    <div class="key-btn gray" onclick="pressKey('C')">C</div>
-                    
-                    <div class="key-btn" onclick="pressKey('4')">4</div>
-                    <div class="key-btn" onclick="pressKey('5')">5</div>
-                    <div class="key-btn" onclick="pressKey('6')">6</div>
-                    <div class="key-btn gray" onclick="pressKey('AC')">AC</div>
-                    
-                    <div class="key-btn" onclick="pressKey('1')">1</div>
-                    <div class="key-btn" onclick="pressKey('2')">2</div>
-                    <div class="key-btn" onclick="pressKey('3')">3</div>
-                    <div class="key-btn orange" onclick="pressKey('enter')">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
+                <!-- 2行構成の立体テンキー -->
+                <div class="keypad-container">
+                    <!-- 1行目: AC / C / 0 / 00 / ⏎ -->
+                    <div class="keypad-row-1">
+                        <div class="key-btn gray-control text-[1.1rem]" onclick="pressKey('AC')">AC</div>
+                        <div class="key-btn gray-control text-[1.15rem]" onclick="pressKey('C')">C</div>
+                        <div class="key-btn text-[1.25rem]" onclick="pressKey('0')">0</div>
+                        <div class="key-btn text-[1.15rem]" onclick="pressKey('00')">00</div>
+                        <div class="key-btn gray-control enter-key text-[1.4rem] font-bold" onclick="pressKey('enter')">⏎</div>
                     </div>
-                    
-                    <div class="key-btn" onclick="pressKey('0')">0</div>
-                    <div class="key-btn" onclick="pressKey('00')">00</div>
-                    <div class="key-btn triple-zero" onclick="pressKey('000')">000</div>
+
+                    <!-- 2行目: 1 〜 9 -->
+                    <div class="keypad-row-2">
+                        <div class="key-btn" onclick="pressKey('1')">1</div>
+                        <div class="key-btn" onclick="pressKey('2')">2</div>
+                        <div class="key-btn" onclick="pressKey('3')">3</div>
+                        <div class="key-btn" onclick="pressKey('4')">4</div>
+                        <div class="key-btn" onclick="pressKey('5')">5</div>
+                        <div class="key-btn" onclick="pressKey('6')">6</div>
+                        <div class="key-btn" onclick="pressKey('7')">7</div>
+                        <div class="key-btn" onclick="pressKey('8')">8</div>
+                        <div class="key-btn" onclick="pressKey('9')">9</div>
+                    </div>
                 </div>
             </div>
 
@@ -279,11 +342,6 @@ if ('serviceWorker' in navigator) {
                 </div>
                 
                 <div class="canvas-container border border-[#333] rounded-lg cursor-pointer" onclick="openZoomModal()">
-                    <!-- 拡大バッジ (非表示) -->
-                    <div class="hidden absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 backdrop-blur-sm border border-white/20 z-10 pointer-events-none">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                        拡大
-                    </div>
                     <canvas id="slopeCanvas"></canvas>
                 </div>
             </div>
@@ -312,20 +370,16 @@ if ('serviceWorker' in navigator) {
 
     <!-- 拡大・ピンチ・回転対応ズームモーダル -->
     <div id="zoomModal" class="hidden fixed inset-0 z-[10000] flex flex-col bg-black transition-opacity">
-        <!-- ヘッダー部分 (操作ガイドを削除) -->
         <div class="absolute top-0 left-0 right-0 p-4 md:p-6 flex justify-end items-center z-[10010]">
             <div class="flex gap-3">
-                <!-- 回転ボタン -->
                 <button type="button" class="text-white bg-white/20 hover:bg-white/30 rounded-full p-2.5 backdrop-blur-md transition-colors" onclick="toggleZoomRotation()">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </button>
-                <!-- 閉じるボタン -->
                 <button type="button" class="text-white bg-white/20 hover:bg-white/30 rounded-full p-2.5 backdrop-blur-md transition-colors" onclick="closeZoomModal()">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
         </div>
-        <!-- 拡大画像コンテナ (touch-noneでスクロールを防止) -->
         <div id="zoomArea" class="flex-1 w-full h-full flex items-center justify-center overflow-hidden touch-none relative">
             <img id="zoomImg" class="max-w-full max-h-full object-contain transition-transform duration-75 ease-out" alt="拡大図面" style="transform-origin: center;">
         </div>
@@ -367,12 +421,12 @@ if ('serviceWorker' in navigator) {
                 return;
             } else {
                 if (isFirstInput) {
-                    if (key === '00' || key === '000') values[activeKey] = '0';
+                    if (key === '00') values[activeKey] = '0';
                     else values[activeKey] = key;
                     isFirstInput = false;
                 } else {
                     if (cur === '0') {
-                        if (key !== '00' && key !== '000') values[activeKey] = key;
+                        if (key !== '00') values[activeKey] = key;
                     } else {
                         values[activeKey] += key;
                     }
@@ -419,7 +473,7 @@ if ('serviceWorker' in navigator) {
                 const tbody = document.getElementById('resultBody');
                 if(tbody) tbody.innerHTML = '';
                 return;
-            };
+            }
 
             const count = Math.ceil(b / interval);
             const newB = count * interval;
@@ -566,7 +620,6 @@ if ('serviceWorker' in navigator) {
             localStorage.setItem('slope_calc_v_keypad', JSON.stringify(values));
         }
 
-        // ---------- ズーム・回転・ピンチ機能 ----------
         let zoomState = { scale: 1, x: 0, y: 0, rotation: 0 };
         let pinchState = { isDragging: false, startX: 0, startY: 0, initialDist: 0, initialScale: 1 };
 
@@ -577,7 +630,6 @@ if ('serviceWorker' in navigator) {
             const zoomImg = document.getElementById('zoomImg');
             zoomImg.src = canvas.toDataURL('image/png');
             
-            // 状態を初期化
             zoomState = { scale: 1, x: 0, y: 0, rotation: 0 };
             updateZoomTransform();
 
@@ -595,19 +647,13 @@ if ('serviceWorker' in navigator) {
         function toggleZoomRotation() {
             const zoomImg = document.getElementById('zoomImg');
             zoomState.rotation = (zoomState.rotation === 0) ? 90 : 0;
-            
-            // 位置のリセット
             zoomState.x = 0;
             zoomState.y = 0;
             
-            // 回転時に画面いっぱいに表示されるようスケールを自動計算
             if (zoomState.rotation === 90) {
                 const vW = window.innerWidth;
                 const vH = window.innerHeight;
-                // imgタグの表示領域を取得
                 const rect = zoomImg.getBoundingClientRect();
-                // 90度回転時は、元の幅が高さになり、元の高さが幅になる
-                // 安全のため画面の95%程度に収まるスケールを算出
                 const scaleW = (vW * 0.95) / rect.height;
                 const scaleH = (vH * 0.95) / rect.width;
                 zoomState.scale = Math.min(scaleW, scaleH);
@@ -625,7 +671,6 @@ if ('serviceWorker' in navigator) {
             zoomImg.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale}) rotate(${zoomState.rotation}deg)`;
         }
 
-        // DOMContentLoaded後にズームエリアのタッチイベントを登録
         window.addEventListener('DOMContentLoaded', () => {
             const zoomArea = document.getElementById('zoomArea');
             if (!zoomArea) return;
@@ -646,7 +691,7 @@ if ('serviceWorker' in navigator) {
             }, { passive: false });
 
             zoomArea.addEventListener('touchmove', (e) => {
-                e.preventDefault(); // デフォルトのスクロール動作を防止
+                e.preventDefault();
                 if (e.touches.length === 1 && pinchState.isDragging) {
                     zoomState.x = e.touches[0].clientX - pinchState.startX;
                     zoomState.y = e.touches[0].clientY - pinchState.startY;
@@ -657,7 +702,6 @@ if ('serviceWorker' in navigator) {
                         e.touches[0].clientY - e.touches[1].clientY
                     );
                     const scale = pinchState.initialScale * (dist / pinchState.initialDist);
-                    // 0.3倍から10倍の間に制限
                     zoomState.scale = Math.max(0.3, Math.min(scale, 10));
                     updateZoomTransform();
                 }
@@ -670,7 +714,6 @@ if ('serviceWorker' in navigator) {
                 if (e.touches.length === 0) {
                     pinchState.isDragging = false;
                 } else if (e.touches.length === 1) {
-                    // 指が1本離れたら再びドラッグ状態の準備
                     pinchState.isDragging = true;
                     pinchState.startX = e.touches[0].clientX - zoomState.x;
                     pinchState.startY = e.touches[0].clientY - zoomState.y;
@@ -678,14 +721,19 @@ if ('serviceWorker' in navigator) {
             });
         });
 
-        // スワイプジェスチャーの実装（タブ切り替え）
         function handleTouchStart(e) {
+            // テンキー領域内のタッチ時はスワイプ切り替えの対象外とする
+            if (e.target.closest('.keypad-container')) {
+                touchStartX = 0;
+                touchStartY = 0;
+                return;
+            }
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
 
         function handleTouchEnd(e) {
-            // モーダルが開いている時はタブ切り替えを無効化
+            if (touchStartX === 0 && touchStartY === 0) return;
             if (!document.getElementById('zoomModal').classList.contains('hidden')) return;
 
             const touchEndX = e.changedTouches[0].clientX;
@@ -694,6 +742,9 @@ if ('serviceWorker' in navigator) {
             const diffX = touchStartX - touchEndX;
             const diffY = touchStartY - touchEndY;
 
+            touchStartX = 0;
+            touchStartY = 0;
+
             if (Math.abs(diffY) < 60 && Math.abs(diffX) > 80) {
                 if (diffX > 0) switchTab('table');
                 else switchTab('calc');
@@ -701,46 +752,48 @@ if ('serviceWorker' in navigator) {
         }
 
         window.onload = () => {
-            const saved = JSON.parse(localStorage.getItem('slope_calc_v_keypad'));
-            if(saved) {
-                values = saved;
-                updateDisplay();
-                calculate();
+            try {
+                const saved = JSON.parse(localStorage.getItem('slope_calc_v_keypad'));
+                if (saved && typeof saved === 'object') {
+                    values = Object.assign(values, saved);
+                    updateDisplay();
+                    calculate();
+                }
+            } catch (err) {
+                console.warn('保存データの読み込みをスキップしました:', err);
             }
 
             window.addEventListener('touchstart', handleTouchStart, {passive: true});
             window.addEventListener('touchend', handleTouchEnd, {passive: true});
-            
             window.addEventListener('resize', calculate);
         };
     </script>
 
-<button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
-<script>
-(function() {
-  let deferredPrompt = null;
-  const btn = document.getElementById('installBtn');
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    <button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
+    <script>
+    (function() {
+      let deferredPrompt = null;
+      const btn = document.getElementById('installBtn');
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!isStandalone) btn.style.display = 'block';
-  });
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!isStandalone) btn.style.display = 'block';
+      });
 
-  btn.addEventListener('click', async function() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    try { await deferredPrompt.userChoice; } catch (e) {}
-    deferredPrompt = null;
-    btn.style.display = 'none';
-  });
+      btn.addEventListener('click', async function() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        try { await deferredPrompt.userChoice; } catch (e) {}
+        deferredPrompt = null;
+        btn.style.display = 'none';
+      });
 
-  window.addEventListener('appinstalled', function() {
-    btn.style.display = 'none';
-  });
-})();
-</script>
-
+      window.addEventListener('appinstalled', function() {
+        btn.style.display = 'none';
+      });
+    })();
+    </script>
 </body>
 </html>
