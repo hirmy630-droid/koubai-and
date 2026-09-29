@@ -1,12 +1,12 @@
-const CACHE_NAME = 'koubai-pwa-v20260929182822';
+const CACHE_NAME = 'koubai-pwa-v20260929191748';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './index.html?v=20260929182822',
+  './index.html?v=20260929191748',
   './manifest.json',
-  './manifest.json?v=20260929182822',
+  './manifest.json?v=20260929191748',
   './sw.js',
-  './sw.js?v=20260929182822'
+  './sw.js?v=20260929191748'
 ];
 
 self.addEventListener('install', (event) => {
@@ -51,7 +51,7 @@ async function networkFirst(request) {
   } catch (error) {
     const cached = await cache.match(request);
     if (cached) return cached;
-    return cache.match('./index.html?v=20260929182822');
+    return cache.match('./index.html?v=20260929191748');
   }
 }
 

@@ -1,8 +1,8 @@
 {
-  "id": "koubai-pwa-v20260929182822",
+  "id": "koubai-pwa-v20260929191748",
   "name": "勾配 寸法計算",
   "short_name": "勾配",
-  "start_url": "./index.html?v=20260929182822",
+  "start_url": "./index.html?v=20260929191748",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
