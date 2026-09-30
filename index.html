@@ -92,7 +92,7 @@
             gap: 0;
         }
 
-        /* 立体的なキーボタン（2ポイント拡大・高さ54px） */
+        /* 立体的なキーボタン（高さ54px） */
         .key-btn {
             background: #242426;
             color: #ffffff;
@@ -124,7 +124,7 @@
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
         }
 
-        /* 1行目グレーキー (AC, C, ⏎) */
+        /* 1行目コントロールキー (AC, C) */
         .key-btn.gray-control {
             background: #353538;
             color: #e5e5ea;
@@ -133,10 +133,6 @@
         .key-btn.gray-control:active {
             background: #28282b;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
-        }
-        /* エンターキーのマーク専用スタイル */
-        .key-btn.enter-key {
-            color: #ff9f0a !important;
         }
 
         /* 2行目数字キーの微調整 (9分割で収まるように文字サイズ最適化) */
@@ -167,18 +163,19 @@
         .view-section { display: none; }
         .view-section.active { display: block; }
         
+        /* 寸法詳細テーブルの行幅（上下パディングをコンパクトに縮小） */
         .result-table th {
             border: 0.5px solid #333; 
             text-align: center; 
-            padding: 10px 2px !important;
-            font-size: 14px;
+            padding: 6px 2px !important;
+            font-size: 13px;
         }
         
         .result-table td {
             border: 0.5px solid #333; 
             text-align: center; 
-            padding: 12px 2px !important;
-            font-size: 1.1rem;
+            padding: 6px 2px !important;
+            font-size: 1.05rem;
         }
 
         #installBtn {
@@ -209,11 +206,13 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <link rel="apple-touch-startup-image" href="splash-1170x2532.png">
     <meta name="format-detection" content="telephone=no">
-<link rel="manifest" href="./manifest.json?v=20260929191748">
+    <!-- バージョンパラメータを更新 -->
+    <link rel="manifest" href="./manifest.json?v=2026093001">
     <script>
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=20260929191748').then(reg => {
+        // バージョンパラメータを更新
+        navigator.serviceWorker.register('./sw.js?v=2026093001').then(reg => {
           reg.onupdatefound = () => {
             const installingWorker = reg.installing;
             if (!installingWorker) return;
@@ -272,13 +271,14 @@
 
                 <!-- 2行構成の立体テンキー -->
                 <div class="keypad-container">
-                    <!-- 1行目: AC / C / 0 / 00 / ⏎ -->
+                    <!-- 1行目: AC / 00 / 0 / ⏎ / C -->
                     <div class="keypad-row-1">
                         <div class="key-btn gray-control text-[1.22rem]" onclick="pressKey('AC')">AC</div>
-                        <div class="key-btn gray-control text-[1.28rem]" onclick="pressKey('C')">C</div>
-                        <div class="key-btn text-[1.38rem]" onclick="pressKey('0')">0</div>
                         <div class="key-btn text-[1.28rem]" onclick="pressKey('00')">00</div>
-                        <div class="key-btn gray-control enter-key text-[1.55rem] font-bold" onclick="pressKey('enter')">⏎</div>
+                        <div class="key-btn text-[1.38rem]" onclick="pressKey('0')">0</div>
+                        <!-- ⏎キー: ボタン背景は0キーと同じ、マークのみオレンジ色を維持 -->
+                        <div class="key-btn text-[#ff9f0a] text-[1.48rem]" onclick="pressKey('enter')">⏎</div>
+                        <div class="key-btn gray-control text-[1.28rem]" onclick="pressKey('C')">C</div>
                     </div>
 
                     <!-- 2行目: 1 〜 9 -->
@@ -333,9 +333,9 @@
                 <table class="result-table w-full border-collapse bg-black text-sm">
                     <thead>
                         <tr>
-                            <th class="w-[20%] text-[#ff9f0a] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">No.</th>
-                            <th class="w-[40%] text-[#0a84ff] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">働き幅</th>
-                            <th class="w-[40%] text-[#30d158] bg-[#1c1c1e] py-2" style="border-bottom: 1px solid #d1d1d6;">長さ</th>
+                            <th class="w-[20%] text-[#ff9f0a] bg-[#1c1c1e]" style="border-bottom: 1px solid #d1d1d6;">No.</th>
+                            <th class="w-[40%] text-[#0a84ff] bg-[#1c1c1e]" style="border-bottom: 1px solid #d1d1d6;">働き幅</th>
+                            <th class="w-[40%] text-[#30d158] bg-[#1c1c1e]" style="border-bottom: 1px solid #d1d1d6;">長さ</th>
                         </tr>
                     </thead>
                     <tbody id="resultBody"></tbody>
@@ -494,9 +494,9 @@
                     const heightColor = i === 0 ? "text-[#8e8e93]" : "text-[#30d158]";
                     
                     tr.innerHTML = `
-                        <td class="text-[#ff9f0a] font-bold border border-[#333] py-2">${i}</td>
-                        <td class="${distColor} border border-[#333] py-2">${dist.toLocaleString()}</td>
-                        <td class="${heightColor} font-black text-xl border border-[#333] py-2">${Math.round(height).toLocaleString()}</td>
+                        <td class="text-[#ff9f0a] font-bold">${i}</td>
+                        <td class="${distColor}">${dist.toLocaleString()}</td>
+                        <td class="${heightColor} font-black text-lg">${Math.round(height).toLocaleString()}</td>
                     `;
                     tbody.appendChild(tr);
                 }
@@ -507,17 +507,17 @@
                 const trScrap = document.createElement('tr');
                 trScrap.className = "bg-[#2c2c2e]";
                 trScrap.innerHTML = `
-                    <td class="text-[#d1d1d6] font-bold border border-[#333] py-2 text-[14px]" style="border-top: 1px solid #d1d1d6;">端材</td>
-                    <td class="text-[#0a84ff] border border-[#333] py-2" style="border-top: 1px solid #d1d1d6;">
-                        <div class="flex flex-col items-center justify-center gap-1">
-                            <span class="text-[14px] text-[#d1d1d6] font-normal leading-none">働き 端材</span>
-                            <span class="leading-none mt-0.5">${Math.round(scrapW).toLocaleString()}</span>
+                    <td class="text-[#d1d1d6] font-bold text-[13px]" style="border-top: 1px solid #d1d1d6;">端材</td>
+                    <td class="text-[#0a84ff]" style="border-top: 1px solid #d1d1d6;">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-[12px] text-[#d1d1d6] font-normal leading-tight">働き 端材</span>
+                            <span class="leading-tight font-semibold mt-0.5">${Math.round(scrapW).toLocaleString()}</span>
                         </div>
                     </td>
-                    <td class="text-[#30d158] font-black text-xl border border-[#333] py-2" style="border-top: 1px solid #d1d1d6;">
-                        <div class="flex flex-col items-center justify-center gap-1">
-                            <span class="text-[14px] text-[#d1d1d6] font-normal leading-none">長さ 端材</span>
-                            <span class="leading-none mt-0.5">${Math.round(scrapL).toLocaleString()}</span>
+                    <td class="text-[#30d158] font-black text-lg" style="border-top: 1px solid #d1d1d6;">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-[12px] text-[#d1d1d6] font-normal leading-tight">長さ 端材</span>
+                            <span class="leading-tight mt-0.5">${Math.round(scrapL).toLocaleString()}</span>
                         </div>
                     </td>
                 `;
